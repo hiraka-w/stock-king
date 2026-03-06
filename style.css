@@ -447,6 +447,11 @@ body {
 .list-ornament-left  { left: 0; }
 .list-ornament-right { right: 0; }
 
+/* group-header 以降のコンテンツラッパー（装飾画像の基点） */
+.list-body {
+  position: relative;
+}
+
 /* グループヘッダー */
 .group-header {
   display: flex;
