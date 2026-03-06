@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>我が家のストック王</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --royal-purple: #2a0a4a;
+    --deep-purple: #160428;
+    --mid-purple: #3d1170;
+    --gold-light: #ffd700;
+    --gold-mid: #e6a817;
+    --gold-dark: #b8860b;
+    --gold-glow: #fff0a0;
+    --fire-red: #ff3b1f;
+    --fire-orange: #ff7b00;
+    --fire-yellow: #ffd000;
+    --text-light: #f5eeff;
+    --text-dim: #9070b0;
+    --border-gold: rgba(230,168,23,0.35);
+    --item-bg: linear-gradient(135deg, rgba(220,170,0,0.72), rgba(180,120,0,0.65));
+    --item-border: rgba(255,210,30,0.55);
+    --item-text: #1a0a00;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--deep-purple) url('stock-king-bg_TOP.jpg') center center / cover no-repeat fixed;
+    color: var(--text-light);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ========== TITLE SCREEN ========== */
+  #title-screen {
+    position: fixed;
+    inset: 0;
+    background: url('stock-king-bg_TOP.jpg') center center / cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  @keyframes titleFadeOut {
+    to { opacity: 0; pointer-events: none; }
+  }
+
+  #title-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(255,215,0,0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(130,0,200,0.15) 0%, transparent 50%);
+  }
+
+  .title-stars {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(255,215,0,0.6);
+    border-radius: 50%;
+    animation: twinkle 2s infinite alternate;
+  }
+
+  @keyframes twinkle {
+    from { opacity: 0.2; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.5); }
+  }
+
+  .title-logo-wrapper {
+    position: relative;
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translate3d(0,30px,0);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    will-change: transform, opacity;
+  }
+
+  .title-king-wrapper {
+    position: relative;
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translate3d(0,30px,0);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    will-change: transform, opacity;
+  }
+
+  .title-king-wrapper img {
+    filter: drop-shadow(0 0 30px rgba(255,215,0,0.7)) drop-shadow(0 0 60px rgba(255,180,0,0.4)) drop-shadow(0 0 12px rgba(255,255,200,0.6));
+  }
+
+  /* ロゴフレア演出 */
+  .logo-flare {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,240,120,0.95), transparent);
+    pointer-events: none;
+    opacity: 0;
+    transform-origin: center center;
+  }
+
+  @keyframes logoFlareSwipe {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scaleX(0.1) rotate(var(--angle)); }
+    25%  { opacity: 1; transform: translate(-50%, -50%) scaleX(1) rotate(var(--angle)); }
+    65%  { opacity: 0.7; transform: translate(-50%, -50%) scaleX(1.6) rotate(var(--angle)); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scaleX(3) rotate(var(--angle)); }
+  }
+
+  .logo-flare.active {
+    animation: logoFlareSwipe 0.8s ease-out forwards;
+  }
+
+  .title-logo-wrapper.show,
+  .title-king-wrapper.show {
+    opacity: 1;
+    transform: translate3d(0,0,0);
+  }
+
+  @keyframes titleKingFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+
+  /* ========== SETUP MODAL ========== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,0,24,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.hidden { display: none; }
+
+  .modal-box {
+    background: linear-gradient(160deg, #2d0f52, #1a0530);
+    border: 1px solid var(--border-gold);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 90%;
+    max-width: 360px;
+    box-shadow: 0 0 40px rgba(100,0,200,0.3), inset 0 1px 0 rgba(255,215,0,0.1);
+    position: relative;
+  }
+
+  .modal-crown {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(255,215,0,0.6));
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .modal-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-light);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .modal-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .royal-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-gold);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text-light);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .royal-input:focus {
+    border-color: var(--gold-mid);
+    box-shadow: 0 0 0 3px rgba(230,168,23,0.15);
+  }
+
+  .royal-input::placeholder { color: var(--text-dim); }
+
+  .royal-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--gold-mid), var(--gold-dark));
+    color: var(--deep-purple);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 16px;
+    letter-spacing: 0.1em;
+    transition: filter 0.2s, transform 0.1s;
+  }
+
+  .royal-btn:hover { filter: brightness(1.15); }
+  .royal-btn:active { transform: scale(0.98); }
+
+  /* ========== MAIN APP ========== */
+  #app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ========== APP HEADER ========== */
+  .app-header {
+    padding: 14px 16px 10px;
+    background: transparent;
+    border-bottom: 1.5px solid var(--border-gold);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .list-name-display {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #9a7e4a;
+    text-align: center;
+    letter-spacing: 0.05em;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(140,100,40,0.3);
+    border-radius: 4px;
+    padding: 10px 14px;
+    flex: 0 1 200px;
+    margin: 0 6px;
+    position: relative;
+    overflow: visible;
+  }
+
+  .list-name-ornament {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    height: calc(100% + 2px);
+    width: auto;
+    opacity: 0.85;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .list-name-ornament-left  { left: -4px; }
+  .list-name-ornament-right { right: -4px; }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    position: relative;
+    transition: opacity 0.2s, filter 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-btn:hover { opacity: 0.8; filter: drop-shadow(0 0 4px rgba(255,215,0,0.5)); }
+
+  .icon-btn-img {
+    width: 23px;
+    height: 23px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: #ff3b5c;
+    border-radius: 50%;
+    border: 1px solid var(--deep-purple);
+  }
+
+  /* ========== GROUP TABS ========== */
+  .tabs-wrapper {
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs-wrapper::-webkit-scrollbar { display: none; }
+
+  .tabs-row {
+    display: flex;
+    gap: 6px;
+    padding: 10px 0 0;
+    align-items: flex-end;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .tab {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.04);
+    border: none;
+    position: relative;
+    font-size: 12px;
+    color: #7a6e90;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    user-select: none;
+    clip-path: polygon(7px 0%, calc(100% - 7px) 0%, 100% 7px, 100% 100%, 0% 100%, 0% 7px);
+  }
+
+  /* 面取りborder: SVGをabsoluteで重ねる（JSで動的にサイズ合わせ） */
+  .tab-border-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .tab:hover { background: rgba(255,255,255,0.08); color: #a09ab8; }
+
+  .tab.active {
+    background: linear-gradient(135deg, rgba(230,168,23,0.3), rgba(180,120,0,0.2));
+    color: var(--gold-light);
+    font-weight: 700;
+  }
+
+  .tab-add {
+    padding: 6px 10px;
+    background: none;
+    border: none;
+    color: #7a6e90;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    position: relative;
+    clip-path: polygon(7px 0%, calc(100% - 7px) 0%, 100% 7px, 100% 100%, 0% 100%, 0% 7px);
+  }
+
+  .tab-add:hover { color: #a09ab8; }
+
+
+  /* ========== LIST AREA ========== */
+  .list-area {
+    flex: 1;
+    padding: 14px 16px 100px;
+    border-top: 1.5px solid rgba(230,168,23,0.35);
+    background: transparent;
+    position: relative;
+  }
+
+  .list-ornament-left,
+  .list-ornament-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 18px;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.7;
+    object-fit: cover;
+  }
+
+  .list-ornament-left  { left: 0; }
+  .list-ornament-right { right: 0; }
+
+
+  /* Group header */
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .group-name-display {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .group-name-display .crown-icon {
+    width: 31px;
+    height: 31px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 4px rgba(255,215,0,0.5));
+    mix-blend-mode: screen;
+  }
+
+  .group-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .small-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(230,168,23,0.2);
+    border-radius: 6px;
+    color: rgba(180,155,120,0.85);
+    font-size: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .small-btn:hover { background: rgba(230,168,23,0.1); color: var(--gold-mid); }
+
+  /* ========== STOCK ITEMS ========== */
+  .stock-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stock-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--item-bg);
+    border: none;
+    border-radius: 0;
+    clip-path: none;
+    -webkit-mask:
+      radial-gradient(circle at 0 0,     transparent 7px, white 7px) top left,
+      radial-gradient(circle at 100% 0,  transparent 7px, white 7px) top right,
+      radial-gradient(circle at 0 100%,  transparent 7px, white 7px) bottom left,
+      radial-gradient(circle at 100% 100%, transparent 7px, white 7px) bottom right;
+    -webkit-mask-size: 51% 51%;
+    -webkit-mask-repeat: no-repeat;
+    mask:
+      radial-gradient(circle at 0 0,     transparent 7px, white 7px) top left,
+      radial-gradient(circle at 100% 0,  transparent 7px, white 7px) top right,
+      radial-gradient(circle at 0 100%,  transparent 7px, white 7px) bottom left,
+      radial-gradient(circle at 100% 100%, transparent 7px, white 7px) bottom right;
+    mask-size: 51% 51%;
+    mask-repeat: no-repeat;
+    padding: 12px 14px;
+    transition: all 0.2s;
+    cursor: grab;
+    position: relative;
+    overflow: hidden;
+  }
+  .item-line {
+    display: inline-block;
+    width: 4px;
+    height: 1.4em;
+    background: rgba(50,20,80,0.7);
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-right: 2px;
+  }
+
+  .stock-item:hover {
+    border-color: rgba(255,220,80,0.9);
+    filter: brightness(1.08);
+  }
+
+  .stock-item.fire-mode {
+    background: linear-gradient(135deg, rgba(255,59,31,0.15), rgba(255,123,0,0.1));
+    border-color: rgba(255,100,0,0.5);
+    animation: firePulse 1.5s infinite;
+  }
+
+  @keyframes firePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,100,0,0); }
+    50% { box-shadow: 0 0 12px 2px rgba(255,100,0,0.2); }
+  }
+
+  .item-name {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--item-text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+    padding-left: 4px;
+  }
+
+  .item-name:hover {
+    color: #3a1a00;
+    text-decoration: underline dotted rgba(0,0,0,0.3);
+  }
+
+  .item-edit-input {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--gold-mid);
+    border-radius: 6px;
+    padding: 3px 8px;
+    color: var(--text-light);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    outline: none;
+    min-width: 0;
+    box-shadow: 0 0 0 3px rgba(230,168,23,0.15);
+  }
+
+  .fire-badge {
+    font-size: 16px;
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .stock-item.fire-mode .fire-badge { display: block; }
+
+  .stock-select {
+    background: rgba(20,5,40,0.75);
+    border: 1px solid rgba(230,168,23,0.5);
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 18px;
+    font-weight: 700;
+    padding: 5px 8px;
+    cursor: pointer;
+    outline: none;
+    min-width: 54px;
+    text-align: center;
+    flex-shrink: 0;
+    transition: border-color 0.2s;
+  }
+
+  .stock-select:focus { border-color: var(--gold-light); box-shadow: 0 0 0 2px rgba(255,215,0,0.15); }
+
+  .stock-item.fire-mode .stock-select {
+    border-color: rgba(255,100,0,0.6);
+    color: var(--fire-orange);
+    font-weight: 700;
+  }
+
+  /* － 数字 ＋ カウンター */
+  .stock-counter {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.25);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(20,5,40,0.75);
+  }
+
+  .counter-btn {
+    background: rgba(0,0,0,0.2);
+    border: none;
+    color: var(--gold-light);
+    font-size: 17px;
+    font-weight: 700;
+    width: 34px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .counter-btn:hover { background: rgba(0,0,0,0.35); color: #fff; }
+  .counter-btn:active { background: rgba(0,0,0,0.5); transform: scale(0.92); }
+
+  .counter-num {
+    min-width: 32px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    padding: 0 4px;
+    border-left: 1px solid rgba(0,0,0,0.2);
+    border-right: 1px solid rgba(0,0,0,0.2);
+    line-height: 36px;
+  }
+
+  .stock-item.fire-mode .counter-num { color: var(--fire-orange); }
+  .stock-item.fire-mode .stock-counter { border-color: rgba(255,100,0,0.6); }
+  .stock-item.fire-mode .item-name { color: var(--fire-orange); font-weight: 900; }
+
+  .delete-item-btn {
+    background: none;
+    border: none;
+    color: rgba(0,0,0,0.3);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .delete-item-btn:hover { color: #8b0000; }
+
+  /* Add item row */
+  .add-item-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    overflow: hidden;
+    padding: 0 2px;
+  }
+
+  .add-item-input {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(230,168,23,0.25);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text-light);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .add-item-input:focus { border-color: var(--gold-mid); border-style: solid; }
+  .add-item-input::placeholder { color: rgba(255,255,255,0.2); }
+
+  .add-item-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-mid), var(--gold-dark));
+    border: none;
+    border-radius: 8px;
+    color: var(--deep-purple);
+    font-size: 22px;
+    font-weight: 700;
+    padding: 0 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .add-item-btn:hover { filter: brightness(1.15); transform: scale(1.03); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .empty-state .empty-icon {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+
+  /* ========== KING MASCOT ========== */
+  .king-mascot {
+    position: fixed;
+    bottom: 24px;
+    right: 16px;
+    z-index: 200;
+    cursor: pointer;
+    animation: kingBounce 1s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes kingBounce {
+    0%, 100% { transform: translate3d(0,0,0); }
+    50% { transform: translate3d(0,-6px,0); }
+  }
+
+  .king-face-btn {
+    width: 64px;
+    height: 72px;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    box-shadow: none;
+    transition: filter 0.2s;
+    overflow: visible;
+  }
+
+  .king-face-btn:hover {
+    filter: drop-shadow(0 0 8px rgba(230,168,23,0.5));
+  }
+
+  .king-speech-bubble {
+    position: absolute;
+    bottom: 90px;
+    right: 0;
+    background: linear-gradient(135deg, #2d0f52, #1a0530);
+    border: 1px solid var(--border-gold);
+    border-radius: 12px;
+    padding: 10px 14px;
+    width: 200px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.6;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    display: none;
+    animation: bubblePop 0.2s ease-out;
+  }
+
+  /* 吹き出しの尻尾（下向き右寄せ・王様アイコン中央に合わせる） */
+  .king-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    right: 24px;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 7px solid #2d0f52;
+  }
+  .king-speech-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -9px;
+    right: 23px;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid var(--border-gold);
+    z-index: -1;
+  }
+
+  @keyframes bubblePop {
+    0%   { opacity: 0; transform: translate(12px, 16px) scale(0.75); }
+    60%  { opacity: 1; transform: translate(-2px, -3px) scale(1.03); }
+    100% { opacity: 1; transform: translate(0, 0) scale(1); }
+  }
+
+  @keyframes bubbleFadeUp {
+    from { opacity: 1; transform: translate(0, 0); }
+    to   { opacity: 0; transform: translate(0, -14px); }
+  }
+
+  .king-speech-bubble.hiding {
+    animation: bubbleFadeUp 0.3s ease-out forwards;
+  }
+
+  .king-speech-bubble.visible { display: block; }
+
+  .bubble-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  /* ========== MESSAGE PAGE ========== */
+  #message-page {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--deep-purple);
+  }
+
+  #message-page.open {
+    display: flex;
+  }
+
+  .msg-header {
+    padding: 14px 16px;
+    background: linear-gradient(180deg, rgba(42,10,74,0.95), rgba(26,5,48,0.85));
+    border-bottom: 1px solid var(--border-gold);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .msg-header-title {
+    flex: 1;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    color: var(--gold-light);
+    font-weight: 700;
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    color: var(--gold-mid);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .msg-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .msg-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .msg-item.unread {
+    border-color: rgba(255,59,92,0.4);
+    background: rgba(255,59,92,0.05);
+  }
+
+  .unread-dot {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    background: #ff3b5c;
+    border-radius: 50%;
+  }
+
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .msg-author {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold-mid);
+  }
+
+  .msg-time {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .msg-body {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+
+  .ok-stamp-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .ok-stamp-btn.stamped {
+    background: rgba(100,220,100,0.1);
+    border-color: rgba(100,220,100,0.4);
+    color: #80e880;
+  }
+
+  .msg-compose-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--gold-mid), var(--gold-dark));
+    border: none;
+    border-radius: 50%;
+    color: var(--deep-purple);
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.2s;
+  }
+
+  .msg-compose-btn:hover { filter: brightness(1.15); }
+
+
+  .form-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .compose-textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-gold);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text-light);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    resize: none;
+    outline: none;
+    min-height: 120px;
+    transition: border-color 0.2s;
+  }
+
+  .compose-textarea:focus { border-color: var(--gold-mid); }
+
+  /* ========== NOTIFICATION TOAST ========== */
+  .notification-toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, #2d0f52, #1a0530);
+    border: 1px solid var(--border-gold);
+    border-radius: 12px;
+    padding: 14px 20px;
+    width: 90%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    z-index: 800;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+
+  .notification-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: all;
+  }
+
+  .notif-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    color: var(--gold-light);
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .notif-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .notif-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* ========== SETTINGS MODAL ========== */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .settings-row:last-child { border-bottom: none; }
+
+  .settings-label {
+    font-size: 13px;
+    color: var(--text-light);
+  }
+
+  .settings-label small {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* ========== DRAG STATES ========== */
+  .stock-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+
+  .stock-item.drag-over {
+    border-color: var(--gold-mid);
+    background: rgba(230,168,23,0.08);
+  }
+
+  .tab.drag-over-tab {
+    border-color: var(--gold-mid) !important;
+    background: rgba(230,168,23,0.1) !important;
+  }
+
+  /* ========== SCROLLBAR ========== */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(230,168,23,0.2); border-radius: 2px; }
+
+  /* ========== CROWN SPARKLE ========== */
+  @keyframes crownSparkle {
+    0%   { opacity: 0.8; transform: scale(0.95); }
+    25%  { opacity: 1; transform: scale(1.06); filter: brightness(1.6) drop-shadow(0 0 10px #fff8c0); }
+    60%  { opacity: 1; transform: scale(1.03); filter: brightness(1.4) drop-shadow(0 0 8px #ffd700); }
+    100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 20px rgba(255,200,0,0.6)); }
+  }
+
+  @keyframes sparkleParticle {
+    0%   { opacity: 0; transform: translate(0,0) scale(0); }
+    30%  { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(1); }
+    100% { opacity: 0; transform: translate(calc(var(--dx)*2.5), calc(var(--dy)*2.5)) scale(0.3); }
+  }
+
+  .crown-sparkle-active {
+    animation: crownSparkle 0.9s ease-out forwards !important;
+  }
+
+  .sparkle-particle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gold-light);
+    pointer-events: none;
+    animation: sparkleParticle 0.8s ease-out forwards;
+    z-index: 10000;
+  }
+
+  .msg-compose-btn-inline {
+    background: linear-gradient(135deg, var(--gold-mid), var(--gold-dark));
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .icon-option {
+    width: 38px;
+    height: 38px;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .icon-option.selected {
+    border-color: var(--gold-mid);
+    background: rgba(230,168,23,0.2);
+    transform: scale(1.15);
+  }
+
+
+  /* iOS自動ズーム防止 */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+</style>
+</head>
+<body>
+
+<!-- Title Screen -->
+<div id="title-screen">
+  <div class="title-stars" id="starsContainer"></div>
+  <!-- King aura canvas (in front of king image) -->
+  <canvas id="kingAuraCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;"></canvas>
+  <div class="title-logo-wrapper" style="position:relative;z-index:3;">
+    <img id="titleLogoImg" src="stock-king-logo-ttl.png" style="width:512px;max-width:92vw;filter:drop-shadow(0 0 20px rgba(255,200,0,0.6));margin-bottom:0;" alt="ストック王">
+  </div>
+  <div class="title-king-wrapper" style="position:relative;z-index:2;">
+    <img id="titleKingImg" src="stock-king-mv-lite.png" alt="ストック王" style="width:340px;max-width:88vw;filter:drop-shadow(0 0 24px rgba(255,215,0,0.4));">
+  </div>
+  <!-- 現在非表示（将来の拡張用） -->
+  <div class="title-subtitle" style="display:none;">— THE ROYAL STOCK KEEPER —</div>
+  <div class="title-ornament" style="display:none;">
+    <div class="ornament-line"></div>
+    <div class="ornament-diamond"></div>
+    <div class="ornament-line"></div>
+  </div>
+</div>
+
+<!-- Setup Modal (first time) -->
+<div class="modal-overlay hidden" id="setupModal">
+  <div class="modal-box">
+    <img src="crawn.png" class="modal-crown" alt="">
+    <div class="modal-title">ようこそ、ストック王国へ</div>
+    <div class="modal-desc">このリストのお名前をお決めください<br><small>（例：平川家のリスト）</small></div>
+    <input type="text" class="royal-input" id="listNameInput" placeholder="〇〇家のリスト" maxlength="20">
+    <button class="royal-btn" onclick="setupComplete()">✦ 王国を開く ✦</button>
+  </div>
+</div>
+
+<!-- Notification Toast -->
+<div class="notification-toast" id="notifToast">
+  <button class="notif-close" onclick="closeNotif()">✕</button>
+  <div class="notif-title">📬 新着メッセージ</div>
+  <div class="notif-body" id="notifBody"></div>
+</div>
+
+<!-- Main App -->
+<div id="app" style="display:none;">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="header-top">
+      <img src="stock-king-logo2.png" alt="ストック王" style="height:52px;filter:drop-shadow(0 0 6px rgba(255,200,0,0.4));flex-shrink:0;margin-left:-10px;margin-top:-4px;">
+      <div class="list-name-display" id="listNameHeader">
+        <img src="list-left.png"  class="list-name-ornament list-name-ornament-left"  alt="">
+        <span id="listNameText"></span>
+        <img src="list-right.png" class="list-name-ornament list-name-ornament-right" alt="">
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="openSettings()" title="設定"><img src="setting-icon.png" class="icon-btn-img" alt="設定"></button>
+        <button class="icon-btn" id="msgIconBtn" onclick="openMessages()" title="メッセージ"><img src="message-icon.png" class="icon-btn-img" alt="メッセージ">
+          <span class="badge" id="msgBadge" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-wrapper">
+    <div class="tabs-row" id="tabsRow">
+      <!-- tabs rendered by JS -->
+    </div>
+  </div>
+
+  <!-- List Area -->
+  <div class="list-area" id="listArea">
+  <img class="list-ornament-left"  src="list-left.png"  alt="">
+  <img class="list-ornament-right" src="list-right.png" alt="">
+    <!-- rendered by JS -->
+  </div>
+</div>
+
+<!-- King Mascot -->
+<div class="king-mascot" id="kingMascot">
+  <div class="king-speech-bubble" id="speechBubble">
+    <button class="bubble-close" onclick="closeBubble()">✕</button>
+    <span id="speechText"></span>
+  </div>
+  <button class="king-face-btn" onclick="showKingMessage()">
+    <img src="stock-king-icon_s.png" style="width:72px;height:auto;object-fit:contain;" alt="王様">
+  </button>
+</div>
+
+<!-- Group Name Modal -->
+<div class="modal-overlay hidden" id="groupModal">
+  <div class="modal-box">
+    <img src="crawn.png" class="modal-crown" alt="">
+    <div class="modal-title" id="groupModalTitle">新しいグループを追加</div>
+    <input type="text" class="royal-input" id="groupNameInput" placeholder="グループ名" maxlength="15"
+      onkeydown="if(event.key==='Enter') confirmGroupModal()">
+    <button class="royal-btn" onclick="confirmGroupModal()" style="margin-top:14px;">決定</button>
+    <button class="royal-btn" onclick="closeGroupModal()" style="margin-top:8px;background:rgba(255,255,255,0.06);color:var(--text-dim);">キャンセル</button>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal-box">
+    <img src="crawn.png" class="modal-crown" alt="">
+    <div class="modal-title">⚙️ 設定</div>
+    <div style="margin-top:16px;">
+      <div class="settings-row">
+        <div class="settings-label">
+          リスト名の変更
+          <small>現在: <span id="currentListName"></span></small>
+        </div>
+      </div>
+      <input type="text" class="royal-input" id="newListNameInput" placeholder="新しいリスト名" maxlength="20" style="margin-top:8px;">
+      <button class="royal-btn" onclick="updateListName()" style="margin-top:12px;">変更する</button>
+      <button class="royal-btn" onclick="closeSettings()" style="margin-top:8px;background:rgba(255,255,255,0.08);color:var(--text-dim);">とじる</button>
+    </div>
+  </div>
+</div>
+
+<!-- Message Page -->
+<div id="message-page">
+  <div class="msg-header">
+    <button class="back-btn" onclick="closeMessages()">←</button>
+    <div class="msg-header-title"><img src="message-icon.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;mix-blend-mode:screen;"> メッセージ</div>
+    <button class="msg-compose-btn-inline" onclick="openCompose()" title="新しいメッセージ">✏️</button>
+  </div>
+  <div class="msg-list" id="msgList">
+    <!-- rendered by JS -->
+  </div>
+  <button class="msg-compose-btn" onclick="openCompose()">✏️</button>
+  <!-- Compose Drawer -->
+  <!-- Compose Modal -->
+<div class="modal-overlay" id="composeModal" style="display:none;z-index:600;">
+  <div class="modal-box" style="max-width:360px;width:90%;">
+    <img src="crawn.png" class="modal-crown" alt="">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;color:var(--gold-light);">✏️ 新しいメッセージ</div>
+      <button class="back-btn" onclick="closeCompose()" style="font-size:18px;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label class="form-label">あなたのアイコン</label>
+        <div id="iconPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
+      </div>
+      <div>
+        <label class="form-label">投稿者名</label>
+        <input type="text" class="royal-input" id="composeAuthor" placeholder="お名前" maxlength="10">
+      </div>
+      <div>
+        <label class="form-label">メッセージ</label>
+        <textarea class="compose-textarea" id="composeText" placeholder="メッセージを入力..." style="min-height:90px;"></textarea>
+      </div>
+      <button class="royal-btn" onclick="postMessage()">投稿する</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ========== STATE ==========
+let state = {
+  listName: '',
+  groups: [],       // [{id, name, items:[{id,name,stock}]}]
+  activeGroupId: null,
+  messages: [],     // [{id,author,text,time,readByMe,okStamped}]
+  myName: '',
+  myIcon: '🐱'
+};
+
+const MESSAGES = [
+  '今日もなかなかいいストックができているな',
+  'ほれほれ、ストックを切らしておらぬかな',
+  'ストックあればこそ、民が豊かになるのだ',
+  '拾うストックあれば、捨てるストックあり',
+  'ストックがないのなら、ストックをすればいいのだ',
+  'わたしがこよなく愛するもの、それはストック',
+  '一日一ストック、その積み重ねがストックだ',
+  'そこにストックがある限り、わたしはストックする',
+  'だって涙が出ちゃう、ストックだもん',
+  'このストックが目に入らぬか！',
+  'ストックは一日にしてならず',
+  '人生ストックあれば万事がうまくいく'
+];
+
+// ========== PERSISTENCE ==========
+function save() {
+  try {
+    localStorage.setItem('stockKingData', JSON.stringify(state));
+  } catch(e) { console.warn('保存失敗', e); }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem('stockKingData');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      state = Object.assign({}, state, parsed);
+    }
+  } catch(e) {
+    console.warn('読み込み失敗、初期化します', e);
+    try { localStorage.removeItem('stockKingData'); } catch(e2) {}
+  }
+}
+
+// ========== SETUP ==========
+function setupComplete() {
+  const val = document.getElementById('listNameInput').value.trim();
+  if (!val) {
+    document.getElementById('listNameInput').focus();
+    return;
+  }
+  state.listName = val;
+  if (state.groups.length === 0) {
+    const id = uid();
+    state.groups.push({ id, name: '日用品', items: [] });
+    state.activeGroupId = id;
+  }
+  save();
+  document.getElementById('setupModal').classList.add('hidden');
+  render();
+}
+
+// ========== TITLE SCREEN STARS ==========
+function spawnStars() {
+  const container = document.getElementById('starsContainer');
+  for (let i = 0; i < 40; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 2 + 's';
+    star.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    container.appendChild(star);
+  }
+}
+
+// ========== RENDER ==========
+function render() {
+  document.getElementById('app').style.display = '';
+  renderHeader();
+  renderTabs();
+  renderList();
+  renderMessages();
+  updateMsgBadge();
+}
+
+function renderHeader() {
+  document.getElementById('listNameText').textContent = state.listName;
+  document.getElementById('currentListName').textContent = state.listName;
+}
+
+function addTabBorderSVG(tab) {
+  // タブがDOMに入ってからサイズを測る
+  requestAnimationFrame(() => {
+    const w = tab.offsetWidth;
+    const h = tab.offsetHeight;
+    const c = 7; // 面取りサイズ
+    const isActive = tab.classList.contains('active');
+    const col = isActive ? 'rgba(230,168,23,0.8)' : 'rgba(230,168,23,0.22)';
+    // 底辺なし（タブ下はリストにつながる）
+    const pts = `${c},0 ${w-c},0 ${w},${c} ${w},${h} 0,${h} 0,${c} ${c},0`;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'tab-border-svg');
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', col);
+    poly.setAttribute('stroke-width', '1.5');
+    svg.appendChild(poly);
+    // 既存SVGを置き換え
+    const old = tab.querySelector('.tab-border-svg');
+    if (old) old.remove();
+    tab.appendChild(svg);
+  });
+}
+
+function renderTabs() {
+  const row = document.getElementById('tabsRow');
+  row.innerHTML = '';
+  state.groups.forEach((g, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (g.id === state.activeGroupId ? ' active' : '');
+    tab.textContent = g.name;
+    tab.dataset.id = g.id;
+    tab.draggable = true;
+    tab.addEventListener('click', () => { state.activeGroupId = g.id; save(); render(); });
+    tab.addEventListener('dragstart', (e) => { e.dataTransfer.setData('tabId', g.id); e.dataTransfer.effectAllowed = 'move'; });
+    tab.addEventListener('dragover', (e) => { e.preventDefault(); tab.classList.add('drag-over-tab'); });
+    tab.addEventListener('dragleave', () => tab.classList.remove('drag-over-tab'));
+    tab.addEventListener('drop', (e) => {
+      e.preventDefault();
+      tab.classList.remove('drag-over-tab');
+      const fromId = e.dataTransfer.getData('tabId');
+      const fromIdx = state.groups.findIndex(x => x.id === fromId);
+      const toIdx = i;
+      if (fromIdx !== toIdx) {
+        const [moved] = state.groups.splice(fromIdx, 1);
+        state.groups.splice(toIdx, 0, moved);
+        save(); render();
+      }
+    });
+    row.appendChild(tab);
+    // 面取りborder: SVGをタブサイズに合わせて描画
+    addTabBorderSVG(tab);
+  });
+  // Add group button
+  const addBtn = document.createElement('button');
+  addBtn.className = 'tab-add';
+  addBtn.textContent = '+';
+  addBtn.title = 'グループを追加';
+  addBtn.onclick = addGroup;
+  row.appendChild(addBtn);
+  // tab-addにも面取りborder（破線）
+  requestAnimationFrame(() => {
+    const w = addBtn.offsetWidth;
+    const h = addBtn.offsetHeight;
+    const c = 7;
+    const col = 'rgba(150,130,180,0.5)';
+    const pts = `${c},0 ${w-c},0 ${w},${c} ${w},${h} 0,${h} 0,${c} ${c},0`;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'tab-border-svg');
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', col);
+    poly.setAttribute('stroke-width', '1.5');
+    poly.setAttribute('stroke-dasharray', '3 3');
+    svg.appendChild(poly);
+    addBtn.appendChild(svg);
+  });
+}
+
+function renderList() {
+  const area = document.getElementById('listArea');
+  const group = state.groups.find(g => g.id === state.activeGroupId);
+  if (!group) { area.innerHTML = ''; return; }
+
+  let html = `<div class="group-header">
+    <div class="group-name-display"><img src="crawn.png" class="crown-icon" alt="👑">${escHtml(group.name)}</div>
+    <div class="group-actions">
+      <button class="small-btn" onclick="renameGroup('${group.id}')">✏️ 名前変更</button>
+      <button class="small-btn" onclick="deleteGroup('${group.id}')">🗑 削除</button>
+    </div>
+  </div>
+  <div class="stock-list" id="stockList">`;
+
+  if (group.items.length === 0) {
+    html += `<div class="empty-state">
+      <span class="empty-icon">📦</span>
+      まだアイテムがありません<br>下の入力欄から追加してください
+    </div>`;
+  } else {
+    group.items.forEach((item, i) => {
+      const fire = item.stock === 0;
+      html += `<div class="stock-item ${fire ? 'fire-mode' : ''}" 
+        draggable="true"
+        data-id="${item.id}"
+        ondragstart="itemDragStart(event,'${item.id}')"
+        ondragover="itemDragOver(event)"
+        ondragleave="itemDragLeave(event)"
+        ondrop="itemDrop(event,'${item.id}')">
+        <span class="drag-handle">⠿</span>
+        <span class="item-line"></span>
+        <span class="item-name" ondblclick="startEditItem('${item.id}')" title="ダブルタップで名前変更">${escHtml(item.name)}</span>
+        <span class="fire-badge">🔥</span>
+        <div class="stock-counter">
+          <button class="counter-btn counter-minus" onclick="changeStock('${item.id}', -1)">－</button>
+          <span class="counter-num">${item.stock}</span>
+          <button class="counter-btn counter-plus" onclick="changeStock('${item.id}', 1)">＋</button>
+        </div>
+        <button class="delete-item-btn" onclick="deleteItem('${item.id}')" title="削除">✕</button>
+      </div>`;
+    });
+  }
+
+  html += `</div>
+  <div class="add-item-row">
+    <input type="text" class="add-item-input" id="newItemInput" placeholder="商品名を入力..." maxlength="30"
+      onkeydown="if(event.key==='Enter') addItem()">
+    <button class="add-item-btn" onclick="addItem()">＋</button>
+  </div>`;
+
+  area.innerHTML = html;
+}
+
+function renderMessages() {
+  const list = document.getElementById('msgList');
+  if (!list) return;
+  if (state.messages.length === 0) {
+    list.innerHTML = '<div class="empty-state"><span class="empty-icon">📭</span>メッセージはまだありません</div>';
+    return;
+  }
+  list.innerHTML = state.messages.slice().reverse().map(m => `
+    <div class="msg-item ${m.readByMe ? '' : 'unread'}" id="msg-${m.id}">
+      ${!m.readByMe ? '<div class="unread-dot"></div>' : ''}
+      <div class="msg-meta">
+        <span class="msg-author">${m.icon || '👤'} ${escHtml(m.author)}</span>
+        <span class="msg-time">${m.time}</span>
+      </div>
+      <div class="msg-body">${escHtml(m.text)}</div>
+      <button class="ok-stamp-btn ${m.okStamped ? 'stamped' : ''}" onclick="toggleOk('${m.id}')">
+        ${m.okStamped ? '✅ OK!' : '👍 OK'}
+      </button>
+    </div>
+  `).join('');
+}
+
+function updateMsgBadge() {
+  const unread = state.messages.filter(m => !m.readByMe).length;
+  const badge = document.getElementById('msgBadge');
+  badge.style.display = unread > 0 ? 'block' : 'none';
+}
+
+// ========== GROUP ACTIONS ==========
+function addGroup() {
+  openGroupModal(null);
+}
+
+function renameGroup(id) {
+  const group = state.groups.find(g => g.id === id);
+  if (group) openGroupModal(id, group.name);
+}
+
+function openGroupModal(editId, currentName) {
+  document.getElementById('groupModalTitle').textContent = editId ? 'グループ名を変更' : '新しいグループを追加';
+  document.getElementById('groupNameInput').value = currentName || '';
+  document.getElementById('groupModal').dataset.editId = editId || '';
+  document.getElementById('groupModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('groupNameInput').focus(), 50);
+}
+
+function closeGroupModal() {
+  document.getElementById('groupModal').classList.add('hidden');
+}
+
+function confirmGroupModal() {
+  const val = document.getElementById('groupNameInput').value.trim();
+  if (!val) { document.getElementById('groupNameInput').focus(); return; }
+  const editId = document.getElementById('groupModal').dataset.editId;
+  if (editId) {
+    const group = state.groups.find(g => g.id === editId);
+    if (group) { group.name = val; }
+  } else {
+    const id = uid();
+    state.groups.push({ id, name: val, items: [] });
+    state.activeGroupId = id;
+  }
+  save(); render();
+  closeGroupModal();
+}
+
+function deleteGroup(id) {
+  if (state.groups.length <= 1) { alert('最後のグループは削除できません'); return; }
+  if (!confirm('このグループを削除しますか？\n中のアイテムもすべて消えます。')) return;
+  state.groups = state.groups.filter(g => g.id !== id);
+  state.activeGroupId = state.groups[0].id;
+  save(); render();
+}
+
+// ========== ITEM ACTIONS ==========
+function addItem() {
+  const input = document.getElementById('newItemInput');
+  const name = input.value.trim();
+  if (!name) return;
+  const group = state.groups.find(g => g.id === state.activeGroupId);
+  if (!group) return;
+  group.items.push({ id: uid(), name, stock: 5 });
+  input.value = '';
+  save(); renderList();
+}
+
+function updateStock(itemId, val) {
+  for (const g of state.groups) {
+    const item = g.items.find(i => i.id === itemId);
+    if (item) { item.stock = parseInt(val); save(); renderList(); return; }
+  }
+}
+
+function changeStock(itemId, delta) {
+  for (const g of state.groups) {
+    const item = g.items.find(i => i.id === itemId);
+    if (item) {
+      item.stock = Math.max(0, item.stock + delta);
+      save(); renderList(); return;
+    }
+  }
+}
+
+function deleteItem(itemId) {
+  for (const g of state.groups) {
+    const idx = g.items.findIndex(i => i.id === itemId);
+    if (idx !== -1) { g.items.splice(idx, 1); save(); renderList(); return; }
+  }
+}
+
+function startEditItem(itemId) {
+  // すでに編集中なら何もしない
+  if (document.querySelector('.item-edit-input')) return;
+  const span = document.querySelector(`.stock-item[data-id="${itemId}"] .item-name`);
+  if (!span) return;
+  const currentName = span.textContent;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'item-edit-input';
+  input.value = currentName;
+  input.maxLength = 30;
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+
+  function finish() {
+    const newName = input.value.trim();
+    if (newName) {
+      for (const g of state.groups) {
+        const item = g.items.find(i => i.id === itemId);
+        if (item) { item.name = newName; save(); break; }
+      }
+    }
+    renderList();
+  }
+
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { input.blur(); }
+    if (e.key === 'Escape') { input.removeEventListener('blur', finish); renderList(); }
+  });
+}
+
+// ========== DRAG & DROP (items) ==========
+let dragItemId = null;
+
+function itemDragStart(e, id) {
+  dragItemId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+
+function itemDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function itemDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function itemDrop(e, toId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragItemId || dragItemId === toId) return;
+  const group = state.groups.find(g => g.id === state.activeGroupId);
+  if (!group) return;
+  const fromIdx = group.items.findIndex(i => i.id === dragItemId);
+  const toIdx = group.items.findIndex(i => i.id === toId);
+  const [moved] = group.items.splice(fromIdx, 1);
+  group.items.splice(toIdx, 0, moved);
+  dragItemId = null;
+  save(); renderList();
+}
+
+// ========== KING MASCOT ==========
+function showKingMessage() {
+  const bubble = document.getElementById('speechBubble');
+  const text = document.getElementById('speechText');
+  text.textContent = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+  bubble.classList.add('visible');
+  clearTimeout(window._bubbleTimer);
+  window._bubbleTimer = setTimeout(closeBubble, 4000);
+}
+
+function closeBubble() {
+  const bubble = document.getElementById('speechBubble');
+  bubble.classList.add('hiding');
+  setTimeout(() => {
+    bubble.classList.remove('visible', 'hiding');
+  }, 300);
+}
+
+// ========== MESSAGES ==========
+function openMessages() {
+  state.messages.forEach(m => m.readByMe = true);
+  save();
+  updateMsgBadge();
+  renderMessages();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('kingMascot').style.display = 'none';
+  document.getElementById('message-page').classList.add('open');
+}
+
+function closeMessages() {
+  document.getElementById('app').style.display = '';
+  document.getElementById('kingMascot').style.display = '';
+  document.getElementById('message-page').classList.remove('open');
+}
+
+function openCompose() {
+  // アイコンピッカー描画
+  const picker = document.getElementById('iconPicker');
+  const icons = ['🐱', '🐶', '🐼', '🦊', '🐸', '🌸', '⭐', '🍎', '🎩', '👑'];
+  picker.innerHTML = icons.map(ic => 
+    `<div class="icon-option ${ic === state.myIcon ? 'selected' : ''}" onclick="selectIcon('${ic}')">${ic}</div>`
+  ).join('');
+  // 名前を自動入力
+  if (state.myName) document.getElementById('composeAuthor').value = state.myName;
+  const modal = document.getElementById('composeModal');
+  modal.style.display = 'flex';
+}
+
+function selectIcon(icon) {
+  state.myIcon = icon;
+  save();
+  document.querySelectorAll('.icon-option').forEach(el => {
+    el.classList.toggle('selected', el.textContent === icon);
+  });
+}
+
+function closeCompose() {
+  document.getElementById('composeModal').style.display = 'none';
+}
+
+function postMessage() {
+  const author = document.getElementById('composeAuthor').value.trim();
+  const text = document.getElementById('composeText').value.trim();
+  if (!author || !text) return;
+  state.myName = author;
+  state.messages.push({
+    id: uid(),
+    author: author,
+    icon: state.myIcon || '🐱',
+    text: text,
+    time: new Date().toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),
+    readByMe: true,
+    okStamped: false
+  });
+  save();
+  document.getElementById('composeAuthor').value = '';
+  document.getElementById('composeText').value = '';
+  closeCompose();
+  renderMessages();
+}
+
+function toggleOk(msgId) {
+  const msg = state.messages.find(m => m.id === msgId);
+  if (msg) { msg.okStamped = !msg.okStamped; save(); renderMessages(); }
+}
+
+// ========== SETTINGS ==========
+function openSettings() {
+  document.getElementById('newListNameInput').value = state.listName;
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.add('hidden');
+}
+
+function updateListName() {
+  const val = document.getElementById('newListNameInput').value.trim();
+  if (!val) return;
+  state.listName = val;
+  save(); render(); closeSettings();
+}
+
+// ========== NOTIFICATION ==========
+function showNotification(text) {
+  const toast = document.getElementById('notifToast');
+  document.getElementById('notifBody').textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+function closeNotif() {
+  document.getElementById('notifToast').classList.remove('show');
+}
+
+// ========== UTILS ==========
+function uid() {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ========== TITLE: METEOR ANIMATION ==========
+(function initKingAura() {
+  const canvas = document.getElementById('kingAuraCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth  || window.innerWidth;
+    canvas.height = canvas.offsetHeight || window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const meteors = [];
+
+  // カラー：ゴールド・ピンク・ホワイト系
+  const COLORS = [
+    [255, 220,  80],  // gold
+    [255, 248, 160],  // pale gold
+    [255, 190, 220],  // pink
+    [220, 160, 255],  // purple-pink
+    [255, 255, 255],  // white
+  ];
+
+  function randColor() {
+    return COLORS[Math.floor(Math.random() * COLORS.length)];
+  }
+
+  // 王様の中心を取得
+  function getKingCenter() {
+    const img = document.getElementById('titleKingImg');
+    if (img && img.getBoundingClientRect().width > 0) {
+      const r = img.getBoundingClientRect();
+      return { x: r.left + r.width * 0.5, y: r.top + r.height * 0.42 };
+    }
+    return { x: canvas.width * 0.5, y: canvas.height * 0.60 };
+  }
+
+  // ── Meteor: 右から左へ弧を描いて通り過ぎる流れ星 ──
+  function Meteor(cx, cy) {
+    // 軌道サイズを3段階に：差を縮めてまとまり感UP
+    const tier = Math.random();
+    if (tier < 0.3) {
+      this.rx = 160 + Math.random() * 40;
+      this.ry = 110 + Math.random() * 30;
+    } else if (tier < 0.7) {
+      this.rx = 200 + Math.random() * 50;
+      this.ry = 140 + Math.random() * 35;
+    } else {
+      this.rx = 245 + Math.random() * 55;
+      this.ry = 170 + Math.random() * 40;
+    }
+    this.tilt = -0.4 + Math.random() * 0.8;
+
+    this.startAngle = (Math.PI * 0.05) + (Math.random() - 0.5) * 0.6;
+    this.angle = this.startAngle;
+    this.endAngle = this.startAngle + Math.PI * (0.5 + Math.random() * 0.5);
+
+    this.speed = 0.018 + Math.random() * 0.022;
+
+    this.cx = cx;
+    this.cy = cy;
+
+    // サイズもバリエーション：細い流れ星と太い流れ星
+    this.size = tier < 0.3
+      ? 1.2 + Math.random() * 1.5   // 細い
+      : tier < 0.7
+        ? 2.2 + Math.random() * 2.5  // 中
+        : 3.0 + Math.random() * 3.0; // 太い
+
+    this.rgb  = randColor();
+    this.alpha = 0;
+    this.maxAlpha = 0.65 + Math.random() * 0.35;
+    this.done = false;
+
+    // 尾の長さ：長めに
+    this.trailLen = 24 + Math.floor(Math.random() * 20);
+    this.trail = [];
+
+    // 頭に十字フレアを出すか（30%の確率）
+    this.hasCrossFlare = Math.random() < 0.30;
+
+    // 途中でピカッと光るフラッシュ（20%の確率）
+    this.hasFlash = Math.random() < 0.20;
+    this.flashAt  = 0.3 + Math.random() * 0.4; // 進行度30〜70%のどこかで
+    this.flashDone = false;
+    this.flashAlpha = 0; // フラッシュの輝度（0=消灯）
+
+    this._calcPos();
+  }
+
+  Meteor.prototype._calcPos = function() {
+    const cosT = Math.cos(this.tilt), sinT = Math.sin(this.tilt);
+    const ex = this.rx * Math.cos(this.angle);
+    const ey = this.ry * Math.sin(this.angle);
+    this.x = this.cx + ex * cosT - ey * sinT;
+    this.y = this.cy + ex * sinT + ey * cosT;
+  };
+
+  Meteor.prototype.update = function() {
+    this.angle += this.speed; // 右→下→左（時計回り下半分）
+
+    this._calcPos();
+
+    // 進行度 0→1
+    const progress = (this.startAngle - this.angle) / (this.startAngle - this.endAngle);
+
+    // フェードイン・フェードアウト
+    if (progress < 0.15)      this.alpha = this.maxAlpha * (progress / 0.15);
+    else if (progress > 0.75) this.alpha = this.maxAlpha * (1 - (progress - 0.75) / 0.25);
+    else                       this.alpha = this.maxAlpha;
+
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > this.trailLen) this.trail.shift();
+
+    if (progress >= 1) this.done = true;
+
+    // フラッシュ更新
+    if (this.hasFlash) {
+      if (!this.flashDone && progress >= this.flashAt) {
+        this.flashAlpha = 1.0;
+        this.flashDone = true;
+      }
+      if (this.flashAlpha > 0) this.flashAlpha -= 0.06; // 約16フレームでフェード
+    }
+  };
+
+  Meteor.prototype.draw = function(ctx) {
+    if (this.alpha <= 0) return;
+    const [r, g, b] = this.rgb;
+
+    // 尾：グラデーションフェード（2層：ぼかし層＋シャープ層）
+    for (let i = 0; i < this.trail.length; i++) {
+      const pt = this.trail[i];
+      const ratio = i / this.trail.length;
+      const tailA = this.alpha * ratio * ratio * 0.6;
+      if (tailA < 0.008) continue;
+
+      // ぼかし層（大きめ・薄い）
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, this.size * (0.5 + ratio * 1.0), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${tailA * 0.4})`;
+      ctx.fill();
+
+      // シャープ層（細い・濃い）
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, this.size * (0.15 + ratio * 0.55), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${tailA})`;
+      ctx.fill();
+    }
+
+    // 頭のグロー
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.shadowBlur  = this.size * 7;
+    ctx.shadowColor = `rgba(${r},${g},${b},1)`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g},${b},1)`;
+    ctx.fill();
+
+    // 白コア
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fill();
+
+    // 十字フレア（ランダムで追加）
+    if (this.hasCrossFlare) {
+      ctx.globalAlpha = this.alpha * 0.85;
+      ctx.shadowBlur  = this.size * 4;
+      ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
+      const fl = this.size * 3.5;
+      for (let ang = 0; ang < Math.PI; ang += Math.PI / 2) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, fl, this.size * 0.22, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.75)`;
+        ctx.fill();
+        ctx.restore();
+      }
+      // フレア中心白点
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = this.alpha;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 0.55, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,1)';
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    // ピカッとフラッシュ
+    if (this.hasFlash && this.flashAlpha > 0) {
+      const fa = Math.max(0, this.flashAlpha);
+      ctx.save();
+      // 外側の大きなグロー
+      ctx.globalAlpha = fa * 0.5;
+      ctx.shadowBlur  = this.size * 20;
+      ctx.shadowColor = `rgba(${r},${g},${b},1)`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.4)`;
+      ctx.fill();
+      // 十字フレア（フラッシュ時は大きめ）
+      ctx.globalAlpha = fa * 0.9;
+      ctx.shadowBlur  = this.size * 8;
+      const fl = this.size * 7;
+      for (let ang = 0; ang < Math.PI; ang += Math.PI / 2) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, fl, this.size * 0.28, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,0.9)`;
+        ctx.fill();
+        ctx.restore();
+      }
+      // 白コア
+      ctx.globalAlpha = fa;
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,1)';
+      ctx.fill();
+      ctx.restore();
+    }
+  };
+
+  // ── メインループ ──
+  let startTime = null;
+  let lastSpawn = 0;
+  const SPAWN_INTERVAL = 180;
+  const MAX_METEORS = 14;
+
+  function animate(ts) {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const titleScreen = document.getElementById('title-screen');
+    if (!titleScreen || titleScreen.style.display === 'none') return;
+
+    if (!startTime) startTime = ts;
+
+    const { x: cx, y: cy } = getKingCenter();
+
+    // 一定間隔で新しい流れ星を追加
+    if (ts - lastSpawn > SPAWN_INTERVAL && meteors.filter(m => !m.done).length < MAX_METEORS) {
+      meteors.push(new Meteor(cx, cy));
+      lastSpawn = ts;
+    }
+    // 古いものを掃除
+    if (meteors.length > 30) meteors.splice(0, meteors.length - 30);
+
+    for (const m of meteors) {
+      if (!m.done) {
+        m.cx = cx; m.cy = cy;
+        m.update();
+      }
+      m.draw(ctx);
+    }
+  }
+
+  requestAnimationFrame(animate);
+})();
+
+// ========== INIT ==========
+spawnStars();
+load();
+
+// タイトル画面: 少し待ってからふわっと表示
+setTimeout(() => {
+  const logo = document.querySelector('.title-logo-wrapper');
+  const king = document.querySelector('.title-king-wrapper');
+  if (logo) logo.classList.add('show');
+  if (king) king.classList.add('show');
+}, 100);
+
+// 王冠キラーン＋ロゴフレア演出（ロゴ表示後）
+function fireCrownSparkle() {
+  const logoImg = document.getElementById('titleLogoImg');
+  const logoWrapper = document.querySelector('.title-logo-wrapper');
+  if (!logoImg) return;
+  logoImg.classList.add('crown-sparkle-active');
+
+  // パーティクル：ロゴ右上の王冠位置
+  const rect = logoImg.getBoundingClientRect();
+  const cx = rect.left + rect.width * 0.88;   // 右端寄り
+  const cy = rect.top  + rect.height * 0.06;  // 上端近く
+  const colors = ['#ffd700','#fff8c0','#ffe066','#ffffff','#ffb800'];
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('div');
+    p.className = 'sparkle-particle';
+    const angle = (i / 16) * Math.PI * 2;
+    const dist = 20 + Math.random() * 45;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist;
+    p.style.cssText = `left:${cx}px;top:${cy}px;--dx:${dx}px;--dy:${dy}px;background:${colors[i%colors.length]};animation-delay:${Math.random()*0.12}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
+
+  // フレア：logoWrapper内の右上を起点に放射
+  if (logoWrapper) {
+    const angles = [0, 30, 55, 80, 110, 140, 165, 200, 240, 290, 330];
+    const sizes  = [180, 110, 220, 90, 150, 100, 200, 120, 80, 140, 160];
+    // フレアの中心をlogoWrapper内の右上(王冠位置)に移動
+    angles.forEach((angle, i) => {
+      const flare = document.createElement('div');
+      flare.className = 'logo-flare';
+      // position: absolute で右上付近に配置
+      flare.style.cssText = `--angle:${angle}deg; width:${sizes[i]}px; top:8%; left:88%; animation-delay:${i * 0.045}s;`;
+      logoWrapper.appendChild(flare);
+      requestAnimationFrame(() => requestAnimationFrame(() => flare.classList.add('active')));
+      setTimeout(() => flare.remove(), 1100 + i * 50);
+    });
+  }
+
+  setTimeout(() => logoImg.classList.remove('crown-sparkle-active'), 950);
+}
+
+setTimeout(fireCrownSparkle, 700);
+
+// タイトル画面をフェードアウト後にDOMから退かす
+setTimeout(() => {
+  const ts = document.getElementById('title-screen');
+  if (ts) {
+    ts.style.transition = 'opacity 0.5s ease-in';
+    ts.style.opacity = '0';
+    setTimeout(() => {
+      ts.style.display = 'none';
+      window.scrollTo(0, 0);
+    }, 500);
+  }
+}, 1800);
+
+// Check for unread messages to show notification
+const unreadMsgs = state.messages.filter(m => !m.readByMe);
+if (unreadMsgs.length > 0) {
+  setTimeout(() => {
+    showNotification(`${unreadMsgs.length}件の未読メッセージがあります`);
+  }, 2800);
+}
+
+// Show setup or render
+setTimeout(() => {
+  if (!state.listName) {
+    document.getElementById('setupModal').classList.remove('hidden');
+  } else {
+    render();
+  }
+}, 2400);
+</script>
+</body>
+</html>
