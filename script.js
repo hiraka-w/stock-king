@@ -233,7 +233,7 @@ function renderList() {
           <span class="item-name" ondblclick="startEditItem('${item.id}')" title="ダブルタップで名前変更">${escHtml(item.name)}</span>
           <span class="fire-badge">🔥</span>
           <div class="stock-counter">
-            <button class="counter-btn counter-minus" onclick="changeStock('${item.id}', -1)">－</button>
+            <button class="counter-btn counter-minus" onclick="changeStock('${item.id}', -1)" ${item.stock <= 0 ? 'disabled' : ''}>－</button>
             <span class="counter-num">${item.stock}</span>
             <button class="counter-btn counter-plus"  onclick="changeStock('${item.id}', 1)">＋</button>
           </div>
@@ -337,7 +337,7 @@ function addItem() {
   const group = state.groups.find(g => g.id === state.activeGroupId);
   if (!group) return;
 
-  group.items.push({ id: uid(), name, stock: 5 });
+  group.items.push({ id: uid(), name, stock: 1 });
   input.value = '';
   save(); renderList();
 }
@@ -350,11 +350,29 @@ function updateStock(itemId, val) {
 }
 
 function changeStock(itemId, delta) {
+  const item_el = document.querySelector(`.stock-item[data-id="${itemId}"]`);
+  if (item_el) {
+    const btn = item_el.querySelector(delta > 0 ? '.counter-plus' : '.counter-minus');
+    const num = item_el.querySelector('.counter-num');
+    [btn, num].forEach(el => {
+      if (!el) return;
+      el.classList.remove('popping');
+      void el.offsetWidth;
+      el.classList.add('popping');
+      el.addEventListener('animationend', () => el.classList.remove('popping'), { once: true });
+    });
+    item_el.classList.remove('bouncing');
+    void item_el.offsetWidth;
+    item_el.classList.add('bouncing');
+    item_el.addEventListener('animationend', () => item_el.classList.remove('bouncing'), { once: true });
+  }
   for (const g of state.groups) {
     const item = g.items.find(i => i.id === itemId);
     if (item) {
       item.stock = Math.max(0, item.stock + delta);
-      save(); renderList(); return;
+      save();
+      setTimeout(() => renderList(), 180);
+      return;
     }
   }
 }
