@@ -199,7 +199,7 @@ function renderList() {
 
   if (!group) { area.innerHTML = ornaments; return; }
 
-  let html = `
+  let html = ornaments + `
     <div class="group-header">
       <div class="group-name-display">
         <img src="crawn.png" class="crown-icon" alt="👑">${escHtml(group.name)}
@@ -209,9 +209,7 @@ function renderList() {
         <button class="small-btn" onclick="deleteGroup('${group.id}')">🗑 削除</button>
       </div>
     </div>
-    <div class="list-items-wrapper">
-      ${ornaments}
-      <div class="stock-list" id="stockList">`;
+    <div class="stock-list" id="stockList">`;
 
   if (group.items.length === 0) {
     html += `
@@ -245,13 +243,12 @@ function renderList() {
   }
 
   html += `
-      </div>
-      <div class="add-item-row">
-        <input type="text" class="add-item-input" id="newItemInput" placeholder="商品名を入力..." maxlength="30"
-          onkeydown="if(event.key==='Enter') addItem()">
-        <button class="add-item-btn" onclick="addItem()">＋</button>
-      </div>
-    </div>`; /* /list-items-wrapper */
+    </div>
+    <div class="add-item-row">
+      <input type="text" class="add-item-input" id="newItemInput" placeholder="商品名を入力..." maxlength="30"
+        onkeydown="if(event.key==='Enter') addItem()">
+      <button class="add-item-btn" onclick="addItem()">＋</button>
+    </div>`;
 
   area.innerHTML = html;
 }
