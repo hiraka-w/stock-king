@@ -11,7 +11,6 @@
       800 : .notification-toast     トースト通知
       600 : #composeModal           メッセージ作成モーダル
       200 : .king-mascot            王様マスコット（fixed）
-       10 : .list-ornament-*        リスト装飾画像
    ─────────────────────────────────────────
 ============================================================ */
 
@@ -432,20 +431,6 @@ body {
   background: transparent;
 }
 
-.list-ornament-left,
-.list-ornament-right {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 10;
-  width: 18px;
-  object-fit: cover;
-  pointer-events: none;
-  opacity: 0.7;
-}
-
-.list-ornament-left  { left: 0; }
-.list-ornament-right { right: 0; }
 
 /* group-header 以降のコンテンツラッパー（装飾画像の基点） */
 .list-body {

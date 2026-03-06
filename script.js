@@ -194,10 +194,7 @@ function renderList() {
   const area  = document.getElementById('listArea');
   const group = state.groups.find(g => g.id === state.activeGroupId);
 
-  // list-area は innerHTML で毎回再構築するため、装飾画像もここで含める
-  const ornaments = '<img class="list-ornament-left" src="list-left.png" alt=""><img class="list-ornament-right" src="list-right.png" alt="">';
-
-  if (!group) { area.innerHTML = ornaments; return; }
+  if (!group) { area.innerHTML = ''; return; }
 
   let html = `
     <div class="group-header">
@@ -210,7 +207,6 @@ function renderList() {
       </div>
     </div>
     <div class="list-body">
-      ${ornaments}
       <div class="stock-list" id="stockList">`;
 
   if (group.items.length === 0) {
