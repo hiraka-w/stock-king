@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>我が家のストック王</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ========== TITLE SCREEN ========== -->
+<div id="title-screen">
+  <div class="title-stars" id="starsContainer"></div>
+  <canvas id="kingAuraCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;"></canvas>
+  <div class="title-logo-wrapper" style="position:relative;z-index:3;">
+    <img id="titleLogoImg" src="stock-king-logo-ttl.png" style="width:512px;max-width:92vw;filter:drop-shadow(0 0 20px rgba(255,200,0,0.6));margin-bottom:0;" alt="ストック王">
+  </div>
+  <div class="title-king-wrapper" style="position:relative;z-index:2;">
+    <img id="titleKingImg" src="stock-king-mv-lite.png" alt="ストック王" style="width:340px;max-width:88vw;filter:drop-shadow(0 0 24px rgba(255,215,0,0.4));">
+  </div>
+  <!-- 現在非表示（将来の拡張用） -->
+  <div class="title-subtitle" style="display:none;">— THE ROYAL STOCK KEEPER —</div>
+  <div class="title-ornament" style="display:none;">
+    <div class="ornament-line"></div>
+    <div class="ornament-diamond"></div>
+    <div class="ornament-line"></div>
+  </div>
+</div>
+
+<!-- ========== SETUP MODAL (初回) ========== -->
+<div class="modal-overlay hidden" id="setupModal">
+  <div class="modal-box">
+    <img src="crawn.png" class="modal-crown" alt="">
+    <div class="modal-title">ようこそ、ストック王国へ</div>
+    <div class="modal-desc">このリストのお名前をお決めください<br><small>（例：平川家のリスト）</small></div>
+    <input type="text" class="royal-input" id="listNameInput" placeholder="〇〇家のリスト" maxlength="20">
+    <button class="royal-btn" onclick="setupComplete()">✦ 王国を開く ✦</button>
+  </div>
+</div>
+
+<!-- ========== NOTIFICATION TOAST ========== -->
+<div class="notification-toast" id="notifToast">
+  <button class="notif-close" onclick="closeNotif()">✕</button>
+  <div class="notif-title">📬 新着メッセージ</div>
+  <div class="notif-body" id="notifBody"></div>
+</div>
+
+<!-- ========== MAIN APP ========== -->
+<div id="app" style="display:none;">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="header-top">
+      <img src="stock-king-logo2.png" alt="ストック王" style="height:52px;filter:drop-shadow(0 0 6px rgba(255,200,0,0.4));flex-shrink:0;margin-left:-10px;margin-top:-4px;">
+      <div class="list-name-display" id="listNameHeader">
+        <img src="list-left.png"  class="list-name-ornament list-name-ornament-left"  alt="">
+        <span id="listNameText"></span>
+        <img src="list-right.png" class="list-name-ornament list-name-ornament-right" alt="">
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="openSettings()" title="設定">
+          <img src="setting-icon.png" class="icon-btn-img" alt="設定">
+        </button>
+        <button class="icon-btn" id="msgIconBtn" onclick="openMessages()" title="メッセージ">
+          <img src="message-icon.png" class="icon-btn-img" alt="メッセージ">
+          <span class="badge" id="msgBadge" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-wrapper">
+    <div class="tabs-row" id="tabsRow">
+      <!-- JS で描画 -->
+    </div>
+  </div>
+
+  <!-- List Area -->
+  <div class="list-area" id="listArea">
+    <!-- JS で描画（装飾画像含む） -->
+  </div>
+
+</div>
+
+<!-- ========== KING MASCOT ========== -->
+<div class="king-mascot" id="kingMascot">
+  <div class="king-speech-bubble" id="speechBubble">
+    <button class="bubble-close" onclick="closeBubble()">✕</button>
+    <span id="speechText"></span>
+  </div>
+  <button class="king-face-btn" onclick="showKingMessage()">
+    <img src="stock-king-icon_s.png" style="width:72px;height:auto;object-fit:contain;" alt="王様">
+  </button>
+</div>
+
+<!-- ========== GROUP NAME MODAL ========== -->
+<div class="modal-overlay hidden" id="groupModal">
+  <div class="modal-box">
+    <img src="crawn.png" class="modal-crown" alt="">
+    <div class="modal-title" id="groupModalTitle">新しいグループを追加</div>
+    <input type="text" class="royal-input" id="groupNameInput" placeholder="グループ名" maxlength="15"
+      onkeydown="if(event.key==='Enter') confirmGroupModal()">
+    <button class="royal-btn" onclick="confirmGroupModal()" style="margin-top:14px;">決定</button>
+    <button class="royal-btn" onclick="closeGroupModal()" style="margin-top:8px;background:rgba(255,255,255,0.06);color:var(--text-dim);">キャンセル</button>
+  </div>
+</div>
+
+<!-- ========== SETTINGS MODAL ========== -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal-box">
+    <img src="crawn.png" class="modal-crown" alt="">
+    <div class="modal-title">⚙️ 設定</div>
+    <div style="margin-top:16px;">
+      <div class="settings-row">
+        <div class="settings-label">
+          リスト名の変更
+          <small>現在: <span id="currentListName"></span></small>
+        </div>
+      </div>
+      <input type="text" class="royal-input" id="newListNameInput" placeholder="新しいリスト名" maxlength="20" style="margin-top:8px;">
+      <button class="royal-btn" onclick="updateListName()" style="margin-top:12px;">変更する</button>
+      <button class="royal-btn" onclick="closeSettings()" style="margin-top:8px;background:rgba(255,255,255,0.08);color:var(--text-dim);">とじる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MESSAGE PAGE ========== -->
+<div id="message-page">
+
+  <div class="msg-header">
+    <button class="back-btn" onclick="closeMessages()">←</button>
+    <div class="msg-header-title">
+      <img src="message-icon.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;mix-blend-mode:screen;">
+      メッセージ
+    </div>
+    <button class="msg-compose-btn-inline" onclick="openCompose()" title="新しいメッセージ">✏️</button>
+  </div>
+
+  <div class="msg-list" id="msgList">
+    <!-- JS で描画 -->
+  </div>
+
+  <button class="msg-compose-btn" onclick="openCompose()">✏️</button>
+
+  <!-- Compose Modal -->
+  <div class="modal-overlay" id="composeModal" style="display:none;z-index:600;">
+    <div class="modal-box" style="max-width:360px;width:90%;">
+      <img src="crawn.png" class="modal-crown" alt="">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:15px;font-weight:700;color:var(--gold-light);">✏️ 新しいメッセージ</div>
+        <button class="back-btn" onclick="closeCompose()" style="font-size:18px;">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label class="form-label">あなたのアイコン</label>
+          <div id="iconPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
+        </div>
+        <div>
+          <label class="form-label">投稿者名</label>
+          <input type="text" class="royal-input" id="composeAuthor" placeholder="お名前" maxlength="10">
+        </div>
+        <div>
+          <label class="form-label">メッセージ</label>
+          <textarea class="compose-textarea" id="composeText" placeholder="メッセージを入力..." style="min-height:90px;"></textarea>
+        </div>
+        <button class="royal-btn" onclick="postMessage()">投稿する</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
