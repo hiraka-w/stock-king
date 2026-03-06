@@ -251,6 +251,15 @@ function renderList() {
     </div>`;
 
   area.innerHTML = html;
+
+  // グループヘッダー行に list-ornament が被らないよう top を調整
+  const groupHdr = area.querySelector('.group-header');
+  if (groupHdr) {
+    const mb = parseInt(getComputedStyle(groupHdr).marginBottom) || 0;
+    const top = groupHdr.offsetTop + groupHdr.offsetHeight + mb;
+    area.querySelectorAll('.list-ornament-left, .list-ornament-right')
+      .forEach(el => { el.style.top = top + 'px'; });
+  }
 }
 
 function renderMessages() {
